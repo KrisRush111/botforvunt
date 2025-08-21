@@ -19,12 +19,11 @@ bot = Bot(TOKEN)
 dp = Dispatcher()
 
 
-def keep_alive():
-    port = int(os.environ.get("PORT", 8500))
-    handler = http.server.SimpleHTTPRequestHandler
-    with socketserver.TCPServer(("", port), handler) as httpd:
-        print(f"Фейковый сервер запущен на порту {port}")
-        httpd.serve_forever()
+def run_http_server():
+    port = int(os.environ.get("PORT", 5001))
+    httpd = HTTPServer(("0.0.0.0", port), SimpleHTTPRequestHandler)
+    print(f"HTTP server running on port {port}")
+    httpd.serve_forever()
 
 last_admin_message_id = None
 
@@ -59,6 +58,8 @@ async def start_handler(message: types.Message, state: FSMContext):
         reply_markup=kb
     )
 
+async def start_bot():
+    await dp.start_polling(bot)
 
 
 @dp.message(F.text == "Что такое TheVuntgram?")
@@ -244,5 +245,8 @@ async def main():
     await dp.start_polling(bot)
 
 if __name__ == "__main__":
-    asyncio.run(main())
+    threading.Thread(target=run_http_server, daemon=True).start()
+
+
+    asyncio.run(start_bot())
 
