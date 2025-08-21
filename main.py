@@ -20,7 +20,7 @@ dp = Dispatcher()
 
 
 def keep_alive():
-    port = int(os.environ.get("PORT", 8080))
+    port = int(os.environ.get("PORT", 8500))
     handler = http.server.SimpleHTTPRequestHandler
     with socketserver.TCPServer(("", port), handler) as httpd:
         print(f"Фейковый сервер запущен на порту {port}")
