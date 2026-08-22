@@ -10,7 +10,14 @@ from aiogram.enums import ParseMode
 from aiogram.filters import Command
 from aiogram.fsm.context import FSMContext
 from aiogram.fsm.state import State, StatesGroup
-from aiogram.types import KeyboardButton, ReplyKeyboardMarkup
+from aiogram.types import (
+    CopyTextButton,
+    InlineKeyboardButton,
+    InlineKeyboardMarkup,
+    KeyboardButton,
+    ReplyKeyboardMarkup,
+)
+from aiogram.utils.markdown import hcode
 
 from config import TOKEN, ADMIN_CHAT_ID
 
@@ -68,6 +75,28 @@ def main_kb() -> ReplyKeyboardMarkup:
         ],
         resize_keyboard=True,
     )
+
+
+def copy_ids_kb(tg_id: int, platform_id: str | None = None) -> InlineKeyboardMarkup:
+    """Кнопки «нажал — скопировалось» (Bot API 7.11+, ничего не отправляют боту)."""
+    rows = [
+        [
+            InlineKeyboardButton(
+                text=f"📋 Telegram ID: {tg_id}",
+                copy_text=CopyTextButton(text=str(tg_id)),
+            )
+        ]
+    ]
+    if platform_id:
+        rows.append(
+            [
+                InlineKeyboardButton(
+                    text=f"📋 ID платформы: {platform_id}",
+                    copy_text=CopyTextButton(text=str(platform_id)),
+                )
+            ]
+        )
+    return InlineKeyboardMarkup(inline_keyboard=rows)
 
 
 def cancel_kb() -> ReplyKeyboardMarkup:
@@ -223,9 +252,10 @@ async def process_account_id(message: types.Message, state: FSMContext):
         ADMIN_CHAT_ID,
         "🚨 ЗАПРОС НА УДАЛЕНИЕ АККАУНТА\n\n"
         f"Пользователь: {message.from_user.full_name}\n"
-        f"ID Telegram: {message.from_user.id}\n"
-        f"ID платформы: {user_input}\n"
+        f"ID Telegram: {hcode(message.from_user.id)}\n"
+        f"ID платформы: {hcode(user_input)}\n"
         f"Время: {message.date}",
+        reply_markup=copy_ids_kb(message.from_user.id, user_input),
     )
 
 
@@ -246,7 +276,8 @@ async def forward_to_admin(message: types.Message):
     sent = await bot.send_message(
         ADMIN_CHAT_ID,
         f"📩 Сообщение от пользователя {message.from_user.full_name} "
-        f"(ID: {message.from_user.id}):\n\n{body}",
+        f"(ID: {hcode(message.from_user.id)}):\n\n{body}",
+        reply_markup=copy_ids_kb(message.from_user.id),
     )
     last_admin_message_id = sent.message_id
 
